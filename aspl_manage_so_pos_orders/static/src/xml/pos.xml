@@ -1,0 +1,852 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="SaveDraftButton">
+        <div class="control-button js_save_draft_order">
+            <li class="fa fa-file-text"></li>
+            Draft order
+        </div>
+    </t>
+
+    <t t-name="ShowOrderList">
+        <div class="control-button show_order_list">
+            <i class="fa fa-list" aria-hidden="true"></i>
+            Orders
+        </div>
+    </t>
+
+    <t t-name="SaleOrderButton">
+        <div class='control-button js_saleorder'>
+            <t t-if="widget.pos.config.sale_order_operations == 'confirm' and !widget.pos.get_order().get_edit_quotation()">
+                <i class='fa fa-tag' /> Create an order
+            </t>
+            <t t-if="widget.pos.config.sale_order_operations == 'draft' and !widget.pos.get_order().get_edit_quotation()">
+                <i class='fa fa-tag' /> Quote
+            </t>
+        </div>
+    </t>
+
+    <t t-name="ViewSaleOrdersButton">
+        <div class='control-button js_saleordersList'>
+            <i class="fa fa-list" aria-hidden="true"></i>Orders
+        </div>
+    </t>
+
+    <t t-name="ViewInvoicesButton">
+        <div class='control-button js_saleinvoiceList'>
+            <i class="fa fa-sticky-note"></i> Invoices
+        </div>
+    </t>
+
+    <t t-name="EditQuotationButton">
+        <div class='control-button js_edit_quotation' style="display:none;">
+            <i class='fa fa-tag' /> Update quote
+        </div>
+    </t>
+
+     <t t-name="SaleOrderConfirmPopupWidget">
+        <div class="modal-dialog">
+            <div class="popup popup-textinput" style="height: 203px;">
+                <p class="title">Confirmation</p>
+                <div>
+                    <span style="font-size:18px">
+                        <t t-if="!widget.options.edit">
+                            <t t-if="widget.pos.config.sale_order_operations == 'confirm'">
+                                Orders created:
+                            </t>
+                            <t t-if="widget.pos.config.sale_order_operations == 'draft'">
+                                Quote created:
+                            </t>
+                        </t>
+                        <t t-if="widget.options.edit">
+                            Updated quote:
+                        </t>
+                    </span>
+                    <a style= "color:blue;" target="_blank" t-att-href="widget.options.url"><t t-esc="widget.options.name"/></a>
+                </div>
+                <div class="footer">
+                    <div class="button cancel">
+                        OK
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-extend="PaymentScreenWidget">
+        <t t-jquery="div.top-content span.next" t-operation="before">
+             <t t-if="!widget.pos.get_order().get_invoice_id()">
+                <t t-if="widget.pos.config.sale_order_operations == 'paid' or widget.pos.get_order().get_order_id()">
+                    <span class='button create_so' id= "btn_so" style="right:0px;margin-right: 160px;">
+                        Validate the order
+                        <i class='fa fa-angle-double-right'></i>
+                    </span>
+                </t>
+             </t>
+            <t t-if="widget.pos.get_order().get_invoice_id()">
+                <span class='button pay_so_invoice' id= "btn_invoice_pay" style="right:0px;margin-right: 160px;">
+                    Pay Invoice
+                    <i class='fa fa-angle-double-right'></i>
+                </span>
+            </t>
+        </t>
+    </t>
+
+    <t t-extend="PosTicket">
+        <t t-jquery="[t-esc='order.name']" t-operation="replace">
+            <t t-if="order.get_invoice_name()">
+                <t t-esc="order.get_invoice_name()"/>
+            </t>
+            <t t-if="order.get_sale_order_name()" >
+                <t t-esc="order.get_sale_order_name()" />
+            </t>
+            <t t-if="order.get_pos_reference()">
+                <t t-esc="order.get_pos_reference()"/>
+            </t>
+            <t t-if="!order.get_invoice_name() and !order.get_sale_order_name() and !order.get_pos_reference()">
+                <t t-esc="order.name" />
+            </t>
+        </t>
+        <t t-jquery="[t-esc='moment().format(\'L LT\')']" t-operation="replace">
+    		<t t-esc="order.get_date_order() ? order.get_date_order() : moment().format('L LT')" />
+    	</t>
+        <t t-jquery="[t-foreach='paymentlines']" t-operation="after">
+                <t t-if="order.get_journal()">
+                   <tr t-foreach="order.get_journal()" t-as="line">
+                   <td>
+                       <t t-esc="line.journal"/>
+                   </td>
+                   <td class="pos-right-align">
+                       <t t-esc="widget.format_currency(line.amount)"/>
+                   </td>
+               </tr>
+               </t>
+        </t>
+        <t t-jquery="[t-esc='widget.format_currency(order.get_change())']" t-operation="replace">
+            <t t-if="order.get_amount_return()">
+                <t t-esc="widget.format_currency(order.get_amount_return())"/>
+            </t>
+            <t t-if="!order.get_amount_return()">
+                <t t-esc="widget.format_currency(order.get_change())"/>
+            </t>
+        </t>
+        <t t-jquery="div.pos-sale-ticket" t-operation="append">
+            <t t-if="order.get_sale_note()">
+                <br />Note: <br /><t t-esc="order.get_sale_note()" />
+            </t>
+        </t>
+        <t t-jquery="table.receipt-orderlines"  t-operation="replace">
+            <t t-if="!order.get_invoice_name()">
+                <table class='receipt-orderlines'>
+                    <colgroup>
+                        <col width='50%' />
+                        <col width='25%' />
+                        <col width='25%' />
+                    </colgroup>
+                    <tr t-foreach="orderlines" t-as="orderline">
+                        <td>
+                            <t t-esc="orderline.get_product().display_name"/>
+                             <t t-if="orderline.get_discount() > 0">
+                                <div class="pos-disc-font">
+                                    Avec une <t t-esc="orderline.get_discount()"/>% discount
+                                </div>
+                            </t>
+                        </td>
+                        <td class="pos-right-align">
+                            <t t-esc="orderline.get_quantity_str_with_unit()"/>
+                        </td>
+                        <td class="pos-right-align">
+                            <t t-esc="widget.format_currency(orderline.get_display_price())"/>
+                        </td>
+                    </tr>
+                </table>
+            </t>
+        </t>
+    </t>
+
+    <t t-extend="XmlReceipt">
+        <t t-jquery="[t-esc='receipt.name']" t-operation="replace">
+            <t t-if="receipt.invoice_name">
+                <t t-esc="receipt.invoice_name"/>
+            </t>
+            <t t-if="receipt.sale_order_name" >
+                <t t-esc="receipt.sale_order_name" />
+            </t>
+            <t t-if="receipt.ref">
+                <t t-esc="receipt.ref"/>
+            </t>
+            <t t-if="!receipt.invoice_name and !receipt.sale_order_name and !receipt.ref">
+                <t t-esc="receipt.name" />
+            </t>
+        </t>
+        <t t-jquery="div.orderlines" t-operation="replace">
+            <t t-if="!receipt.invoice_name">
+                <t t-foreach='receipt.orderlines' t-as='line'>
+                    <t t-set='simple' t-value='line.discount === 0 and line.unit_name === "Unit(s)" and line.quantity === 1' />
+                    <t t-if='simple'>
+                        <line>
+                            <left><t t-esc='line.product_name_wrapped[0]' /></left>
+                            <right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='line.price_display' /></value></right>
+                        </line>
+                        <t t-call="XmlReceiptWrappedProductNameLines"/>
+                    </t>
+                    <t t-if='!simple'>
+                        <line><left><t t-esc='line.product_name_wrapped[0]' /></left></line>
+                        <t t-call="XmlReceiptWrappedProductNameLines"/>
+                        <t t-if='line.discount !== 0'>
+                            <line indent='1'><left>Discount: <t t-esc='line.discount' />%</left></line>
+                        </t>
+                        <line indent='1'>
+                            <left>
+                                <value t-att-value-decimals='pos.dp["Product Unit of Measure"]' value-autoint='on'>
+                                    <t t-esc='line.quantity' />
+                                </value>
+                                <t t-if='line.unit_name !== "Unité(s)"'>
+                                    <t t-esc='line.unit_name' />
+                                </t>
+                                x
+                                <value t-att-value-decimals='pos.dp["Product Price"]'>
+                                    <t t-esc='line.price' />
+                                </value>
+                            </left>
+                            <right>
+                                <value t-att-value-decimals='pos.currency.decimals'><t t-esc='line.price_display' /></value>
+                            </right>
+                        </line>
+                    </t>
+                </t>
+            </t>
+        </t>
+        <t t-jquery="[t-esc='receipt.date.localestring']" t-operation="replace">
+    		<t t-esc="receipt.date_order ? receipt.date_order : receipt.date.localestring" />
+    	</t>
+
+    	<t t-jquery="[t-foreach='paymentlines']" t-operation="replace">
+    		<t t-if="receipt.reprint_payment">
+    			<t t-foreach='receipt.reprint_payment' t-as='line'>
+                    <line>
+                        <left><t t-esc='line.journal' /></left>
+                        <right>
+                            <value><t t-esc='line.amount'/></value>
+                        </right>
+                    </line>
+                </t>
+    		</t>
+			<t t-if="!receipt.reprint_payment">
+	            <t t-foreach='paymentlines' t-as='line'>
+	                <line>
+	                    <left><t t-esc='line.name' /></left>
+	                    <right><value><t t-esc='line.get_amount()'/></value></right>
+	                </line>
+            	</t>
+            </t>
+            <br/>
+    	</t>
+        <t t-jquery="receipt" t-operation="append">
+            <t t-if="receipt.sale_note">
+                <br />
+                <line>
+                    <left>Note: </left>
+                </line>
+                <line>
+                    <left><t t-esc="receipt.sale_note" /></left>
+                </line>
+            </t>
+        </t>
+    </t>
+
+    <t t-name="SaleOrderListScreenWidget">
+        <div class="sale-orderlist-screen screen">
+            <div class="screen-content" style="max-width: 1275px;">
+                <section class="top-content">
+                    <span class='button back'>
+                        <i class='fa fa-angle-double-left'></i>
+                        Cancel
+                    </span>
+                    <span class='button paid'>
+                        <i class='fa fa-credit-card'></i>
+                        Paid
+                    </span>
+                    <span class='button draft'>
+                        <i class='fa fa-file-text'></i>
+                        Draft
+                    </span>
+                    <span class='button confirm'>
+                        <i class='fa fa-file-text'></i>
+                        Confirm
+                    </span>
+                    <span class='button my_orders'>
+                        <i class='fa fa-file-text'></i>
+                        My Orders
+                    </span>
+                   <span class="date-filter">
+                        <input readonly="readonly" placeholder="yyyy-mm-dd" type="text" id="sale-datepicker" />
+                    </span>
+                    <span class='button reload'>
+                        <i class="fa fa-refresh" aria-hidden="true"></i>
+                    </span>
+                    <span class='searchbox'>
+                        <input placeholder='Search orders' style="width: 164px;" />
+                        <span class='search-clear'></span>
+                    </span>
+                    <span class='searchbox'></span>
+                </section>
+                <section class="full-content">
+                    <div class='window'>
+                        <section class='subwindow'>
+                            <div class='subwindow-container'>
+                                <div class='subwindow-container-fix touch-scrollable scrollable-y sale-order-list-scroll' style="height:auto;max-height: 470px !important;">
+                                    <div>
+                                        <table class='sale-order-list'>
+                                            <thead>
+                                                <tr>
+                                                    <th>Num.</th>
+                                                    <th>Client</th>
+                                                    <th>Date order</th>
+                                                    <th>Amount</th>
+                                                    <th>Total</th>
+                                                    <th class="quotation_edit_button">Edit</th>
+                                                    <th class="pay_button">Pay</th>
+                                                    <th class="return_button" style="display:none">Return</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody  class='sale-order-list-contents'>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+                <div id="pagination">
+                     <div><button class="btn btn-danger" id="first"><i class="fa fa-angle-double-left fa-lg"></i></button></div>
+                     <div><button class="btn btn-danger" id="previous"></button></div>
+                     <div><span class="text" id="text"></span></div>
+                     <div><button class="btn btn-danger" id="next"></button></div>
+                     <div><button class="btn btn-danger" id="last"><i class="fa fa-angle-double-right fa-lg"></i></button></div>
+                 </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="SaleOrderlistLine">
+        <tr class='sale-line' t-att-data-id='order.id'>
+            <td><t t-esc='order.name'/></td>
+            <td><t t-esc='order.partner_id ? order.partner_id[1] : ""' /></td>
+            <td><t t-esc='order.date_order or ""' /></td>
+            <td><t t-esc="widget.format_currency(order.amount_due) or ''" /></td>
+            <td><t t-esc='widget.format_currency(order.amount_total) or ""' /></td>
+            <t t-if="widget.filter != 'done' or widget.filter == 'all'">
+                <t t-if="widget.filter == 'draft' or widget.filter == 'all'">
+                    <td class="quotation_edit_button">
+                        <t t-if="order.state == 'draft' or order.state == 'sent'">
+                            <span id="edit_quotation" t-att-data-id='order.id' title="Edit" style="cursor:pointer;font-size: 27px;">
+                                <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                            </span>
+                        </t>
+                    </td>
+                </t>
+                <t t-if="widget.filter == 'sale' or widget.filter == 'draft' or widget.filter == 'all'">
+                    <td class="pay_button">
+                        <t t-if="order.state == 'draft' or order.state == 'sent' or order.state == 'sale'">
+                            <span id="pay_amount" t-att-data-id='order.id' title="Pay" style="cursor:pointer;font-size: 27px;">
+                                <i class="fa fa-money" aria-hidden="true"></i>
+                            </span>
+                        </t>
+                    </td>
+                </t>
+            </t>
+            <t t-if="widget.filter == 'done'">
+                <td class="return_button">
+                    <span id="return_so" t-att-data-id='order.id' title="Return" style="cursor:pointer;font-size: 27px;margin-left: 10px;">
+                        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+                    </span>
+                </td>
+            </t>
+        </tr>
+    </t>
+
+    <t t-name="InvoiceListScreenWidget">
+        <div class="invoice-list-screen screen">
+            <div class="screen-content" style="max-width: 1275px;">
+                <section class="top-content">
+                    <span class='button back'>
+                        <i class='fa fa-angle-double-left'></i>
+                        Back
+                    </span>
+                    <span class='button draft'>
+                        <i class='fa fa-file-text'></i>
+                        Draft
+                    </span>
+                     <span class='button open'>
+                        <i class='fa fa-file-text'></i>
+                        Open
+                    </span>
+                    <span class="date-filter" style="margin-right: 295px;">
+                        <input readonly="readonly" placeholder="yyyy-mm-dd" type="text" id="invdatepicker" />
+                    </span>
+                    <span class='searchbox' style="top: 8px;">
+                        <input placeholder='Search invoices' style="width: 164px;" />
+                        <span class='search-clear'></span>
+                    </span>
+                    <span class='searchbox'></span>
+                    <span class='button reload'>
+                        <i class="fa fa-refresh" aria-hidden="true"></i>
+                        Reload
+                    </span>
+                </section>
+                <section class="full-content">
+                    <div class='window'>
+                        <section class='subwindow'>
+                            <div class='subwindow-container'>
+                                <div class='subwindow-container-fix touch-scrollable scrollable-y invoice-list-scroll' style="height:auto;max-height: 470px !important;">
+                                    <div>
+                                        <table class='order-invoice-list'>
+                                            <thead>
+                                                <tr>
+                                                    <th>Num</th>
+                                                    <th>Client</th>
+                                                    <th>Invoice Date</th>
+                                                    <th>Due date</th>
+                                                    <th>Amount</th>
+                                                    <th>Total</th>
+                                                    <th>Paid</th>
+                                                    <th>Printed</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody  class='invoice-list-contents'>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="OrderListScreenWidget">
+        <div class="orderlist-screen screen">
+            <div class="screen-content">
+                <section class="top-content">
+                    <span class='button back'>
+                        <i class='fa fa-angle-double-left'></i>
+                        Back
+                    </span>
+                    <span class='button paid'>
+                        <i class='fa fa-credit-card'></i>
+                        Paid
+                    </span>
+                    <span class='button draft'>
+                        <i class='fa fa-file-text'></i>
+                        Draft
+                    </span>
+                     <span class='button posted'>
+                        <i class='fa fa-file-text'></i>
+                        Posted
+                    </span>
+                   <span class="date-filter">
+                        <input placeholder="yyyy-mm-dd" type="text" id="datepicker" />
+                    </span>
+                    <span class='button reload'>
+                        <i class="fa fa-refresh" aria-hidden="true"></i>
+                        Reload
+                    </span>
+                    <span class='searchbox' style="top: 7px;">
+                        <input placeholder='Search orders' style="width: 164px;" />
+                        <span class='search-clear'></span>
+                    </span>
+                    <span class='searchbox'></span>
+                </section>
+                <section class="full-content">
+                    <div class='window'>
+                        <section class='subwindow'>
+                            <div class='subwindow-container'>
+                                <div class='subwindow-container-fix touch-scrollable scrollable-y order-list-scroll' style="height:auto;max-height: 470px !important;">
+                                    <div>
+                                        <table class='order-list'>
+                                            <thead>
+                                                <tr>
+                                                    <th>Order reference</th>
+                                                    <th>Ticket reference</th>
+                                                    <th>Client</th>
+                                                    <th>Order date</th>
+                                                    <th>Total</th>
+                                                    <th>Ticket</th>
+                                                    <th>Product</th>
+                                                    <th>Edited</th>
+                                                    <th>Recommended</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody  class='order-list-contents'>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+                <div id="order-pagination">
+                     <div><button class="btn btn-danger order-btn" id="order-first"><i class="fa fa-angle-double-left fa-lg"></i></button></div>
+                     <div><button class="btn btn-danger order-btn" id="order-previous"></button></div>
+                     <div><span class="text" id="order-text"></span></div>
+                     <div><button class="btn btn-danger order-btn" id="order-next"></button></div>
+                     <div><button class="btn btn-danger order-btn" id="order-last"><i class="fa fa-angle-double-right fa-lg"></i></button></div>
+                 </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="OrderlistLine">
+        <tr class='client-line' t-att-data-id='order.id'>
+            <td><t t-esc='order.name' /></td>
+            <td><t t-esc='order.pos_reference' /></td>
+            <td><t t-esc='order.partner_id[1]' /></td>
+            <td><t t-esc='order.date_order or ""' /></td>
+            <td><t t-esc='widget.format_currency(order.amount_total) or ""' /></td>
+            <td>
+                <span id="print_order" t-att-data-id='order.id' title="Print Receipt" style="cursor:pointer">
+                    <img src="/aspl_manage_so_pos_orders/static/src/img/print.png" style="height: 30px;" />
+                </span>
+            </td>
+            <td>
+                <span id="view_lines" t-att-data-id='order.id' title="Products" style="cursor:pointer">
+                    <img src="/aspl_manage_so_pos_orders/static/src/img/view.png" style="height: 30px;" />
+                </span>
+            </td>
+            <td>
+                <t t-if="order.state == 'draft'">
+                    <span id="edit_order" t-att-data-id='order.id' t-att-data-operation="edit" title="Edit" style="cursor:pointer;font-size: 27px;">
+                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                    </span>
+                </t>
+            </td>
+            <td align="center">
+                <t t-if="order.state == 'paid' or order.state == 'done'">
+                    <span id="re_order_duplicate" t-att-data-id='order.id' t-att-data-operation="reorder" title="Reorder" style="cursor:pointer;font-size: 27px;">
+                        <i class="fa fa-repeat" aria-hidden="true"></i>
+                    </span>
+                </t>
+            </td>
+        </tr>
+    </t>
+
+    <t t-name="InvoicelistLine">
+        <tr class='invoice-line' t-att-data-id='invoice.id'>
+            <td><t t-esc='invoice.display_name'/></td>
+            <td><t t-esc='invoice.partner_id ? invoice.partner_id[1] : ""' /></td>
+            <td><t t-esc='invoice.date_invoice or " " ' /></td>
+            <td><t t-esc='invoice.date_due or " " ' /></td>
+            <td><t t-esc='invoice.residual or " " ' /></td>
+            <td><t t-esc='invoice.amount_total' /></td>
+            <td class="pay_button">
+                <t t-if="invoice.residual">
+                    <span id="pay_invoice" t-att-data-id='invoice.id' t-att-data-amount="invoice.residual"
+                          t-att-data-partner="invoice.partner_id[0]" t-att-data-name="invoice.display_name" title="Pay" style="cursor:pointer;font-size: 27px;">
+                        <i class="fa fa-money" aria-hidden="true"></i>
+                    </span>
+                </t>
+                <t t-if="!invoice.residual">
+                    <span id="pay_invoice" t-att-data-id='invoice.id' t-att-data-amount="invoice.amount_total"
+                          t-att-data-partner="invoice.partner_id[0]" t-att-data-name="invoice.display_name" title="Pay" style="cursor:pointer;font-size: 27px;">
+                        <i class="fa fa-money" aria-hidden="true"></i>
+                    </span>
+                </t>
+            </td>
+            <td>
+                <span id="print_invoice" t-att-data-id='invoice.id' title="Print Receipt" style="cursor:pointer;font-size: 27px;">
+                    <i class="fa fa-file-pdf-o" aria-hidden="true" style="margin-left:10px"></i>
+                </span>
+            </td>
+        </tr>
+    </t>
+
+    <t t-name="SaleOrderPopup">
+        <div class="modal-dialog">
+            <div class="popup popup-textinput popup-sale-order">
+                <p class="title">Order</p>
+                <div class="date_box">
+                	<div style="float: left;width: 50%;">
+                		<span>Order Date </span>
+                    	<input type="text" id="orderdate-datepicker"  readonly="readonly"/>
+                	</div>
+                	<div style="float: left;width: 50%;">
+                		<span>Requested Date </span>
+                    	<input type="text" id="requesteddate-datepicker"  readonly="readonly"/>
+                	</div>
+                </div>
+                <div id="tabs-container" style="padding: 5px;">
+                    <ul class="tabs-menu">
+                        <li class="current"><a href="#tab-1">Delivery address</a></li>
+                        <li><a href="#tab-2">Billing address</a></li>
+                        <li class="note_tab"><a href="#tab-3">Note</a></li>
+                        <li class="signature_tab"><a href="#tab-4">Signature</a></li>
+                    </ul>
+
+                    <div class="tab">
+                        <div id="tab-1" class="tab-content">
+                            <div class="choices_content">
+                                <span class="shipping_content">Delivery address</span>
+                                <select class="shipping_contact_selection">
+                                    <option value="0">Select Address</option>
+                                    <t t-if="widget.contacts">
+                                        <t t-foreach="widget.contacts" t-as="contact">
+                                            <option t-att-value="contact.id"><t t-esc="contact.name" /></option>
+                                        </t>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="choices_content">
+                                <div class="shipping_content choice-2">
+                                    <input type="checkbox" class="ship_diff_address" name="ship_diff_address" />
+                                    <span>Deliver to a different address</span>
+                                </div>
+                                <div class="ship_create_contact">
+                                    <table>
+                                        <tr>
+                                            <td><input type="text" class="client_name" placeholder="Name"/></td>
+                                            <td><input type="text" class="client_email" placeholder="Email"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="client_city" placeholder="City"/></td>
+                                            <td><input type="text" class="client_state" placeholder="States"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="client_zip" placeholder="Zip"/></td>
+                                            <td><input type="text" class="client_country" placeholder="Country"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="client_mobile" placeholder="Mobile"/></td>
+                                            <td><input type="text" class="client_phone" placeholder="Phone"/></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-2" class="tab-content">
+                            <div class="choices_content">
+                                <span class="invoice_content">Billing address</span>
+                                <select class="invoicing_contact_selection">
+                                    <option>Select Address</option>
+                                    <t t-if="widget.contacts">
+                                        <t t-foreach="widget.contacts" t-as="contact">
+                                            <option t-att-value="contact.id"><t t-esc="contact.name" /></option>
+                                        </t>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="choices_content">
+                                <div class="invoice_content choice-2">
+                                    <input type="checkbox" class="invoice_diff_address" />
+                                    <span>Bill to a different address</span>
+                                </div>
+                                <div class="invoice_create_contact">
+                                    <table>
+                                        <tr>
+                                            <td><input type="text" class="client_name" placeholder="Name"/></td>
+                                            <td><input type="text" class="client_email" placeholder="Email"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="client_city" placeholder="City"/></td>
+                                            <td><input type="text" class="client_state" placeholder="States"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="client_zip" placeholder="Zip"/></td>
+                                            <td><input type="text" class="client_country" placeholder="Country"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="client_mobile" placeholder="Mobile"/></td>
+                                            <td><input type="text" class="client_phone" placeholder="Phone"/></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-3" class="tab-content">
+                            <div class="choices_content">
+                                <textarea class="sale_order_note" placeholder="Note" rows="6" cols="30"></textarea>
+                            </div>
+                        </div>
+                        <div id="tab-4" class="tab-content">
+                            <div class="choices_content">
+                                <div id="signature">
+                                    <canvas id="canvas" style="margin-left:100px">
+                                    </canvas>
+                                </div>
+                                <div>
+                                    <span style="border-top: 2px solid black;padding-left: 315px;margin-left: 95px;"></span>
+                                </div>
+                                <div class="button clear" style="margin-right: 50px;">
+                                    Clear
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer">
+                    <div class="button confirm">
+                        OK
+                    </div>
+                    <div class="button cancel">
+                        Cancel
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="SOConfirmPopup">
+        <div class="modal-dialog">
+            <div class="popup">
+                <p class="title">Order confirmation</p>
+                <div class="popup_content">
+                    <p>The system needs the delivery slips to be validated before creating the invoices for the next items in your basket.</p>
+                    <t t-if="widget.deliver_products">
+                        <ul>
+                        <t t-foreach="widget.deliver_products" t-as="line">
+                            <li><t t-esc="line.get_product().display_name" /></li>
+                        </t>
+                        </ul>
+                    </t>
+                    Click on confirm to continue.
+                </div>
+                <div class="footer">
+                    <div class="button confirm">
+                        Continue
+                    </div>
+                    <div class="button cancel">
+                        Cancel
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="SOReturnPopup">
+         <div class="modal-dialog">
+            <div class="popup popup-return-product" style="width:535px !important;">
+               <div class="header">
+                    <p class="title">
+                        <t t-if="widget.sale_order">
+                            <t t-esc="widget.sale_order.name"/>
+                        </t>
+                        <t t-if="!widget.sale_order">
+                            Products
+                        </t>
+                    </p>
+                </div>
+                <div style="height: 276px;overflow: auto;">
+                    <table class="popup-product-return-list table">
+                         <thead>
+                           <tr>
+                               <th>Product</th>
+                               <th>Quantity</th>
+                               <th/>
+                           </tr>
+                       </thead>
+                       <tbody class="popup-product-return-contents">
+                            <t t-if="widget.lines">
+                               <t t-foreach="widget.lines" t-as="line">
+                                   <t t-if="line.qty > 0">
+                                       <tr t-att-id="line.id">
+                                           <td style="width:60%;">
+                                               <t t-esc="line.p_name || '-'"/>
+                                           </td>
+                                           <td style="width:30%;">
+                                               <span class="input-group-addon">
+                                                   <a t-attf-href="#" class="mb8 js_return_qty">
+                                                       <i class="fa fa-minus"></i>
+                                                   </a>
+                                               </span>
+                                               <input type="text" class="js_quantity return_product_qty form-control" data-min="0"
+                                                      t-att-data-max="line.qty" t-att-name="line.id" t-att-value="line.qty"
+                                                      t-att-data-total-qty="line.qty"
+                                                      readonly="readonly" />
+                                               <span class="input-group-addon">
+                                                   <a t-attf-href="#" class="mb8 float_left js_return_qty">
+                                                       <i class="fa fa-plus"></i>
+                                                   </a>
+                                               </span>
+                                           </td>
+                                           <td style="width:10%;" class="remove_line">
+                                               <i class="oe_link_icon fa fa-trash oe_icon" style="font-size: 22px;"/>
+                                           </td>
+                                       </tr>
+                                   </t>
+                               </t>
+                           </t>
+                       </tbody>
+                    </table>
+                </div>
+                <div class="footer">
+                    <div class="button confirm">
+                        Return
+                    </div>
+                    <div class="button cancel">
+                        Cancel
+                    </div>
+                </div>
+            </div>
+         </div>
+    </t>
+
+    <t t-name="ProductPopup">
+         <div class="modal-dialog">
+            <div class="popup popup-reorder-product">
+               <div class="header">
+                   <div class="btn button cancel">
+                        <i class="fa fa-times"></i>
+                   </div>
+                    <p class="title">Products</p>
+                </div>
+                <div style="height: 276px;overflow: auto;">
+                    <table class="popup-product-list table">
+                         <thead>
+                           <tr>
+                               <th>#</th>
+                               <th>Product</th>
+                               <th>Quantity</th>
+                               <th>Price</th>
+                               <th>Discount</th>
+                               <th>Subtotal</th>
+                           </tr>
+                       </thead>
+                       <tbody class="popup-product-list-contents">
+                           <t t-if="widget.order_lines">
+	                           <t t-foreach="widget.order_lines" t-as="line">
+	                              <tr>
+	                                  <td><t t-esc="widget.order_lines.indexOf(line) + 1" /></td>
+	                                  <td><t t-esc="line.product_id[1]" /></td>
+	                                  <td><t t-esc="line.qty" /></td>
+                                      <td><t t-esc="widget.format_currency(line.price_unit)" /></td>
+                                      <td><t t-esc="line.discount" /></td>
+                                      <td><t t-esc="widget.format_currency(line.price_subtotal)" /></td>
+	                              </tr>
+	                           </t>
+                           </t>
+                       </tbody>
+                    </table>
+                </div>
+                <div class="footer">
+                    <t t-if="widget.state == 'draft'">
+                       <button class="button confirm save edit" style="line-height:0">
+                            <div class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true" height="20" width="20"></i></div>
+                            <div class="text">Edit</div>
+                        </button>
+                    </t>
+                    <t t-if="widget.state == 'paid' or widget.state == 'done'">
+                       <button class="button confirm save duplicate" style="line-height:0">
+                            <div class="icon"><i class="fa fa-repeat" aria-hidden="true" height="20" width="20"></i></div>
+                            <div class="text">Reorder</div>
+                        </button>
+                    </t>
+                </div>
+            </div>
+         </div>
+    </t>
+
+</templates>
